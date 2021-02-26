@@ -1,8 +1,9 @@
 from django.urls import path
-from .views import UserPost
+from .views import UserPost, UserPostGet
 
 
 urlpatterns = [
-    path('posts/<int:id>/', UserPost.as_view(), name='posts'),
+    path('posts/', UserPost.as_view(), name='user_posts_gets'),
+    path('posts/<int:id>/', UserPostGet.as_view(), name='user_posts_post'),
 ]
 
