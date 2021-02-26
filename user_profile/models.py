@@ -7,11 +7,11 @@ class UserPosts(models.Model):
     image = models.ImageField(null=True, upload_to="images/")
     title = models.TextField(null=True)
     likes = models.IntegerField(default=0)
-    is_liked = models.BooleanField()
+    is_liked = models.BooleanField(default=False)
 
 
 class UserProfile(models.Model):
-    user = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='user')
+    user = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='user_profile')
     avatar = models.ImageField(null=True, upload_to="images/")
     likes = models.IntegerField(default=0)
     is_liked = models.BooleanField()
@@ -19,7 +19,7 @@ class UserProfile(models.Model):
 
 
 class Comments(models.Model):
-    user = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='user')
+    user = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='user_comments')
     post = models.ForeignKey(UserPosts, on_delete=models.CASCADE, related_name='post', null=True)
     profile_image = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='profile_image', null=True)
     comment = models.CharField(max_length=300)

@@ -6,23 +6,21 @@ import jwt
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from main.serializers import MessageSerializer
+from user_profile.serializers import UserPostSerializer
 
 
-class UserProf(APIView):
-    # def get(self, request, id):
-    #     username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-    #     user = NewUser.objects.get(username=username['username'])
-    #     all_messages = Messages.objects.all().filter(
-    #         Q(who=user, whom__id=id) | Q(who__id=id, whom=user))
-    #     all_messages = [MessageSerializer(instance=message).data for message in all_messages]
-    #     return Response({'all_messages': all_messages})
+class UserPost(APIView):
+    def get(self, request, id):
+        username = NewUser.objects.get(id=id)
+        all_posts = UserPosts.objects.all().filter(user=username.id)
+        all_posts = [UserPostSerializer(instance=post).data for post in all_posts]
+        return Response({'all_posts': all_posts})
 
     def post(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
-        serializer = MessageSerializer(data=data)
+        serializer = UserPostSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
