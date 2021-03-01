@@ -64,7 +64,7 @@ class UserProfilePost(APIView):
         serializer = UserProfileSerializer(data=data, instance=instance)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response({'status': 'success'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
