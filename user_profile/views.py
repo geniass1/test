@@ -56,11 +56,6 @@ class UserProfilePost(APIView):
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
         if 'image' in request.data:
-            # data['image'] = decode_base64_file(request.data['image'])
-            # serializer = Base64ImageField(data=request.data['image'])
-            # if serializer.is_valid():
-            #     serializer.save()
-            #     breakpoint()
             serializer = UserPostSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -82,11 +77,10 @@ class UserProfileGet(APIView):
             id = data['user']
         user_profile = UserProfile.objects.get(user=id)
         user_profile = UserProfileSerializer(user_profile)
-        if 'image' in user_profile:
-            user_profile.data['image'] = UserPosts.objects.get(id=user_profile.data['image']).image.name
         data = dict(user_profile.data.items())
+        if 'image' in data:
+            data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username
-        data.pop('user')
         return Response({'user': data}, status=status.HTTP_200_OK)
 
 
