@@ -14,7 +14,7 @@ class Register(APIView):
         if serializer.is_valid():
             serializer.save()
             UserProfile.objects.create(user=NewUser.objects.get(id=serializer.data['id']))
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
         return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
