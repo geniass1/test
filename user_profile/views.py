@@ -78,7 +78,7 @@ class UserProfileGet(APIView):
         user_profile = UserProfile.objects.get(user=id)
         user_profile = UserProfileSerializer(user_profile)
         data = dict(user_profile.data.items())
-        if 'image' in data:
+        if 'image' in data and data['image'] != None:
             data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username
         return Response({'user': data}, status=status.HTTP_200_OK)
