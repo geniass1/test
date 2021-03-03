@@ -73,10 +73,10 @@ class UserProfilePost(APIView):
 
 class UserProfileGet(APIView):
     def get(self, request, id):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        data = dict(request.data.items())
-        data['user'] = NewUser.objects.get(username=username['username']).id
         if id == 0:
+            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+            data = dict(request.data.items())
+            data['user'] = NewUser.objects.get(username=username['username']).id
             id = data['user']
         user_profile = UserProfile.objects.get(user=id)
         user_profile = UserProfileSerializer(user_profile)
