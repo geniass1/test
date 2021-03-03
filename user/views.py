@@ -31,6 +31,7 @@ class ChangeInfo(APIView):
 class Login(APIView):
     def post(self, request):
         try:
+            # breakpoint()
             if NewUser.objects.get(username=request.data['username']).check_password(request.data['password']):
                 key = 'secret'
                 encoded = jwt.encode({'username': request.data['username']}, key, algorithm='HS256')
