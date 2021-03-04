@@ -37,10 +37,6 @@ class ReactionSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        like = Messages(
-            who=validated_data['who'],
-            whom=validated_data['whom'],
-        )
         likes = Friends(who=validated_data['who'], whom=validated_data['whom'])
         likes.save()
         return likes

@@ -7,6 +7,7 @@ import jwt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from main.serializers import CurrentFriendsSerializer, MessageSerializer, ReactionSerializer
+from rest_framework import status
 
 
 class Reaction(APIView):
@@ -19,8 +20,8 @@ class Reaction(APIView):
         serializer = ReactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Message(APIView):
@@ -30,7 +31,7 @@ class Message(APIView):
         all_messages = Messages.objects.all().filter(
             Q(who=user, whom__id=id) | Q(who__id=id, whom=user))
         all_messages = [MessageSerializer(instance=message).data for message in all_messages]
-        return Response({'all_messages': all_messages})
+        return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
 
     def post(self, request, id):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
@@ -40,8 +41,8 @@ class Message(APIView):
         serializer = MessageSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CurrentFriends(APIView):
@@ -53,4 +54,4 @@ class CurrentFriends(APIView):
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
         serializers = CurrentFriendsSerializer(qs, many=True)
-        return Response(serializers.data)
+        return Response(serializers.data, status=status.HTTP_200_OK)

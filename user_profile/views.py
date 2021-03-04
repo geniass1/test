@@ -4,7 +4,7 @@ import jwt
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from user_profile.serializers import UserPostSerializer, UserProfileSerializer, Base64ImageField
+from user_profile.serializers import UserPostSerializer, UserProfileSerializer
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 
@@ -58,7 +58,7 @@ class UserProfilePost(APIView):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
-        if 'image' in request.data:
+        if 'image' in request.data and 'image' != None:
             serializer = UserPostSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
