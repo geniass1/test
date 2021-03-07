@@ -95,21 +95,23 @@ class UserProfilePost(APIView):
 
 
 class UserProfileGet(APIView):
-    def get(self, request, id):
-        if id == 0:
+    def get(self, request):
+        if request.GET['id'] == '0':
             username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
             data = dict(request.data.items())
             data['user'] = NewUser.objects.get(username=username['username']).id
             id = data['user']
+        else:
+            id = request.GET['id']
         user_profile = UserProfile.objects.get(user=id)
         user_profile = UserProfileSerializer(user_profile)
         data = dict(user_profile.data.items())
         friends = CurrentFriends()
         subscriptions = Subscriptions()
         posts = UserPostGet()
-        data['friends'] = friends.get(request, id).data
-        data['subscriptions'] = subscriptions.get(request, id).data
-        data['posts'] = posts.get(request, id).data
+        data['friends'] = friends.get(request).data['friends']
+        data['subscriptions'] = subscriptions.get(request).data
+        # data['posts'] = posts.get(request, id).data
         if 'image' in data and data['image'] != None:
             data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username

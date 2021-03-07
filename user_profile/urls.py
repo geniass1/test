@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import UserPost, UserPostGet, UserPostLikes, UserProfilePost, UserProfileGet, UserPostDelete
+from .views import UserPost, UserPostGet, UserPostLikes, UserProfilePost, UserProfileGet,\
+    UserPostDelete, UserPostComments
 
 
 urlpatterns = [
@@ -8,6 +9,6 @@ urlpatterns = [
     path('posts/<int:id>/', UserPostGet.as_view(), name='user_posts_post'),
     path('likes/<int:id>/', UserPostLikes.as_view(), name='user_posts_likes'),
     path('change/', UserProfilePost.as_view(), name='user-profile'),
-    path('get/<int:id>/', UserProfileGet.as_view(), name='user-profile-get'),
+    path('get/', UserProfileGet.as_view(), name='user-profile-get'),
 ]
 

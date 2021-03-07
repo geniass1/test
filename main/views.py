@@ -19,6 +19,17 @@ class Reaction(APIView):
         data = dict(request.data.items())
         data['who'] = user.id
         data['whom'] = data['id']
+        if 'accept' in request.data:
+            friend = Friends.objects.get(whom=user.id, who=data['id'])
+            friend.pending = False
+            friend.save()
+            return Response({'status': 'success'}, status=status.HTTP_200_OK)
+        try:
+            friend = Friends.obejects.get(whom=user.id, who=data['id'])
+            friend.pending = False
+            friend.save()
+        except:
+            pass
         serializer = ReactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -55,31 +66,52 @@ class Message(APIView):
 
 
 class CurrentFriends(APIView):
-    def get(self, request, id):
-        # username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        # user = NewUser.objects.get(username=username['username'])
+    def get(self, request):
+        if request.GET['id'] == '0':
+            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+            id = NewUser.objects.get(username=username['username']).id
+        else:
+            id = request.GET['id']
         user = NewUser.objects.get(id=id)
-        qs = NewUser.objects.filter(
+        friends = NewUser.objects.filter(
             Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
-        serializer = [CurrentFriendsSerializer(instance=post).data for post in qs]
+        serializer = [CurrentFriendsSerializer(instance=post).data for post in friends]
         for friend in serializer:
             try:
                 friend['image'] = request.build_absolute_uri((UserProfile.objects.get(id=friend['id'])).image.image.url)
             except:
                 friend['image'] = None
-        return Response(serializer, status=status.HTTP_200_OK)
+        return Response({'friends': serializer}, status=status.HTTP_200_OK)
 
 
 class Subscriptions(APIView):
-    def get(self, request, id):
-        # username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        # user = NewUser.objects.get(username=username['username'])
+    def get(self, request):
+        if request.GET['id'] == '0':
+            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+            id = NewUser.objects.get(username=username['username']).id
+        else:
+            id = request.GET['id']
         user = NewUser.objects.get(id=id)
         qs = NewUser.objects.filter(
             ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
+
         serializers = CurrentFriendsSerializer(qs, many=True)
+        return Response(serializers.data, status=status.HTTP_200_OK)
+
+
+class Requested(APIView):
+    def get(self, request):
+        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        user = NewUser.objects.get(username=username['username']).id
+        # user = NewUser.objects.get(id=id)
+        requested = NewUser.objects.filter(
+            ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
+            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user, pending=True))
+        ).distinct()
+
+        serializers = CurrentFriendsSerializer(requested, many=True)
         return Response(serializers.data, status=status.HTTP_200_OK)

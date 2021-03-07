@@ -7,6 +7,7 @@ class Friends(models.Model):
     who = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='who_likes')
     whom = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='whom_likes')
     created = models.DateField(default=datetime.now)
+    pending = models.BooleanField(default=False)
 
 
 class Messages(models.Model):
