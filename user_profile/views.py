@@ -17,12 +17,23 @@ class UserPostGet(APIView):
         return Response({'all_posts': all_posts}, status=status.HTTP_200_OK)
 
 
+class UserPostDelete(APIView):
+    def delete(self, request, id):
+        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        if UserPosts.objects.get(id=id).user.id == NewUser.objects.get(username=username['username']).id:
+            post = UserPosts.objects.get(id=id)
+            post.delete()
+            return Response({'status': 'success'}, status=status.HTTP_200_OK)
+        return Response({'status': 'error'}, status=status.HTTP_404_NOT_FOUND)
+
+
 class UserPost(APIView):
     def post(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
         serializer = UserPostSerializer(data=data)
+        # breakpoint()
         if serializer.is_valid():
             serializer.save()
             data = dict(serializer.data.items())

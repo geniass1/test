@@ -6,11 +6,11 @@ from rest_framework import serializers
 
 
 class UserPostSerializer(serializers.ModelSerializer):
-    image = Base64ImageField(max_length=None, use_url=True)
+    image = Base64ImageField(max_length=None, use_url=True, required=False)
     class Meta:
         model = UserPosts
         fields = (
-            'image', 'title', 'id', 'user',
+            'image', 'title', 'id', 'user', 'likes'
         )
 
     def create(self, validated_data):
