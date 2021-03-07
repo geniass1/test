@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from main.serializers import CurrentFriendsSerializer, MessageSerializer, ReactionSerializer
 from rest_framework import status
+from django.shortcuts import get_object_or_404
 
 
 class Reaction(APIView):
@@ -22,6 +23,13 @@ class Reaction(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, id):
+        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        user = NewUser.objects.get(username=username['username'])
+        friend = get_object_or_404(Friends, who=user.id, whom=id)
+        friend.delete()
+        return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
 
 class Message(APIView):

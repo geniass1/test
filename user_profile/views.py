@@ -14,6 +14,9 @@ class UserPostGet(APIView):
         username = get_object_or_404(NewUser, id=id)
         all_posts = UserPosts.objects.all().filter(user=username.id)
         all_posts = [UserPostSerializer(instance=post).data for post in all_posts]
+        for post in all_posts:
+            if post['image'] != None:
+                post['image'] = request.build_absolute_uri(post['image'])
         return Response({'all_posts': all_posts}, status=status.HTTP_200_OK)
 
 
@@ -33,7 +36,6 @@ class UserPost(APIView):
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
         serializer = UserPostSerializer(data=data)
-        # breakpoint()
         if serializer.is_valid():
             serializer.save()
             data = dict(serializer.data.items())
