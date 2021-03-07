@@ -1,5 +1,6 @@
 from user.models import NewUser
 from main.models import Friends, Messages
+from user_profile.models import UserProfile
 from django.db.models import Q
 from django.db.models import Exists, OuterRef
 import jwt
@@ -12,12 +13,12 @@ from django.shortcuts import get_object_or_404
 
 
 class Reaction(APIView):
-    def post(self, request, id):
+    def post(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
         data = dict(request.data.items())
         data['who'] = user.id
-        data['whom'] = id
+        data['whom'] = data['id']
         serializer = ReactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -62,8 +63,13 @@ class CurrentFriends(APIView):
             Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
-        serializers = CurrentFriendsSerializer(qs, many=True)
-        return Response(serializers.data, status=status.HTTP_200_OK)
+        serializer = [CurrentFriendsSerializer(instance=post).data for post in qs]
+        for friend in serializer:
+            try:
+                friend['image'] = request.build_absolute_uri((UserProfile.objects.get(id=friend['id'])).image.image.url)
+            except:
+                friend['image'] = None
+        return Response(serializer, status=status.HTTP_200_OK)
 
 
 class Subscriptions(APIView):

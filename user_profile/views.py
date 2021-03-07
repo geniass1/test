@@ -1,5 +1,5 @@
 from user.models import NewUser
-from user_profile.models import UserPosts, Likes, UserProfile
+from user_profile.models import UserPosts, Likes, UserProfile, Comments
 import jwt
 from main.views import CurrentFriends, Subscriptions
 from rest_framework.response import Response
@@ -64,6 +64,16 @@ class UserPostLikes(APIView):
             like.save()
             post.save()
             return Response({'status': 'like was added'}, status=status.HTTP_200_OK)
+
+
+class UserPostComments(APIView):
+    def post(self, request, id):
+        username = jwt.decode(request.headers['Authorization'].split(' ')[1],
+                              'secret', algorithms=['HS256'])
+        user = NewUser.objects.get(username=username['username'])
+        # post = get_object_or_404(UserPosts, id=id)
+        comment = Comments.obejcts.create(user=user.id, post=id, comment=request.data['comment'])
+        return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
 
 class UserProfilePost(APIView):

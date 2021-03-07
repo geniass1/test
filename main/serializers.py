@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from user.models import NewUser
-from .models import Messages, Friends
+from main.models import Messages, Friends
 
 
 class CurrentFriendsSerializer(serializers.ModelSerializer):

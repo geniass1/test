@@ -13,6 +13,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/', include(('user.urls', 'user'), namespace='user')),
     path('user_profile/', include(('user_profile.urls', 'user_profile'), namespace='user_profile')),
-    path('', include(('main.urls', 'main'), namespace='main')),
+    path('user-actions/', include(('main.urls', 'user-actions'), namespace='user-actions')),
     path('api/token/', obtain_auth_token, name='obtain_auth_token'),
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

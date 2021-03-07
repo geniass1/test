@@ -7,7 +7,7 @@ urlpatterns = [
     path('posts/delete/<int:id>/', UserPostDelete.as_view(), name='user_posts_delete'),
     path('posts/<int:id>/', UserPostGet.as_view(), name='user_posts_post'),
     path('likes/<int:id>/', UserPostLikes.as_view(), name='user_posts_likes'),
-    path('change-user-profile/', UserProfilePost.as_view(), name='user-profile'),
-    path('user-profile-get/<int:id>/', UserProfileGet.as_view(), name='user-profile-get'),
+    path('change/', UserProfilePost.as_view(), name='user-profile'),
+    path('get/<int:id>/', UserProfileGet.as_view(), name='user-profile-get'),
 ]
 
