@@ -1,7 +1,7 @@
 from user.models import NewUser
 from user_profile.models import UserPosts, Likes, UserProfile
 import jwt
-
+from main.views import CurrentFriends, Subscriptions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_profile.serializers import UserPostSerializer, UserProfileSerializer
@@ -81,6 +81,12 @@ class UserProfileGet(APIView):
         user_profile = UserProfile.objects.get(user=id)
         user_profile = UserProfileSerializer(user_profile)
         data = dict(user_profile.data.items())
+        friends = CurrentFriends()
+        subscriptions = Subscriptions()
+        posts = UserPostGet()
+        data['friends'] = friends.get(request, id).data
+        data['subscriptions'] = subscriptions.get(request, id).data
+        data['posts'] = posts.get(request, id).data
         if 'image' in data and data['image'] != None:
             data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username

@@ -46,11 +46,25 @@ class Message(APIView):
 
 
 class CurrentFriends(APIView):
-    def get(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
+    def get(self, request, id):
+        # username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        # user = NewUser.objects.get(username=username['username'])
+        user = NewUser.objects.get(id=id)
         qs = NewUser.objects.filter(
             Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
+            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
+        ).distinct()
+        serializers = CurrentFriendsSerializer(qs, many=True)
+        return Response(serializers.data, status=status.HTTP_200_OK)
+
+
+class Subscriptions(APIView):
+    def get(self, request, id):
+        # username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        # user = NewUser.objects.get(username=username['username'])
+        user = NewUser.objects.get(id=id)
+        qs = NewUser.objects.filter(
+            ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
         serializers = CurrentFriendsSerializer(qs, many=True)

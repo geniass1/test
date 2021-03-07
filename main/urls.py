@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import CurrentFriends, Message, Reaction
+from .views import CurrentFriends, Message, Reaction, Subscriptions
 
 
 urlpatterns = [
-    path('current-friends/', CurrentFriends.as_view(), name='current-friends'),
+    path('current-friends/<int:id>/', CurrentFriends.as_view(), name='current-friends'),
+    path('subscription/<int:id>/', Subscriptions.as_view(), name='subscription'),
     path('message/<int:id>/', Message.as_view(), name='message'),
     path('reaction/<int:id>/', Reaction.as_view(), name='reaction'),
 ]
