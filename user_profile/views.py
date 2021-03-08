@@ -112,7 +112,7 @@ class UserProfileGet(APIView):
         subscriptions = Subscriptions()
         posts = UserPostGet()
         data['friends'] = friends.get(request).data['friends']
-        data['subscriptions'] = subscriptions.get(request).data
+        data['subscriptions'] = subscriptions.get(request).data['subscriptions']
         # data['posts'] = posts.get(request, id).data
         if 'image' in data and data['image'] != None:
             data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
