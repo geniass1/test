@@ -17,6 +17,7 @@ class UserPostGet(APIView):
         for post in all_posts:
             if post['image'] != None:
                 post['image'] = request.build_absolute_uri(post['image'])
+                post['comments'] = Comments.objects.get(post=post['id'])
         return Response({'all_posts': all_posts}, status=status.HTTP_200_OK)
 
 
@@ -71,8 +72,9 @@ class UserPostComments(APIView):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1],
                               'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
-        # post = get_object_or_404(UserPosts, id=id)
-        comment = Comments.obejcts.create(user=user.id, post=id, comment=request.data['comment'])
+        post = get_object_or_404(UserPosts, id=id)
+        # breakpoint()
+        comment = Comments.objects.create(user=user, post=post, comment=request.data['comment'])
         return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
 
@@ -103,7 +105,7 @@ class UserProfileGet(APIView):
             id = data['user']
         else:
             id = request.GET['id']
-        user_profile = UserProfile.objects.get(user=id)
+        user_profile = get_object_or_404(UserProfile, user=id)
         user_profile = UserProfileSerializer(user_profile)
         data = dict(user_profile.data.items())
         friends = CurrentFriends()

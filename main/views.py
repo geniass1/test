@@ -100,7 +100,7 @@ class Subscriptions(APIView):
         ).distinct()
 
         serializers = CurrentFriendsSerializer(qs, many=True)
-        return Response(serializers.data, status=status.HTTP_200_OK)
+        return Response({'subscriptions': serializers.data}, status=status.HTTP_200_OK)
 
 
 class Requested(APIView):
@@ -113,4 +113,4 @@ class Requested(APIView):
         ).distinct()
 
         serializers = CurrentFriendsSerializer(requested, many=True)
-        return Response(serializers.data, status=status.HTTP_200_OK)
+        return Response({'requests': serializers.data}, status=status.HTTP_200_OK)
