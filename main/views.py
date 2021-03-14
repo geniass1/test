@@ -79,17 +79,18 @@ class CurrentFriends(APIView):
         ).distinct()
         serializer = [CurrentFriendsSerializer(instance=post).data for post in friends]
         for friend in serializer:
+            # breakpoint()
             try:
                 friend['image'] = request.build_absolute_uri((UserProfile.objects.get(id=friend['id'])).image.image.url)
             except:
                 friend['image'] = None
-            if request.GET['id'] != 0 and "Authorization" in request.headers:
+            if "Authorization" in request.headers:
                 username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
                 id = NewUser.objects.get(username=username['username']).id
                 if Friends.objects.filter(who=id, whom=friend['id']).count()>0:
-                    friend['is_friend'] = True
+                    friend['isFriend'] = True
                 else:
-                    friend['is_friend'] = False
+                    friend['isFriend'] = False
         return Response({'friends': serializer}, status=status.HTTP_200_OK)
 
 
