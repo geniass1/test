@@ -19,7 +19,7 @@ class Reaction(APIView):
         data = dict(request.data.items())
         data['who'] = user.id
         data['whom'] = data['id']
-        if 'accept' in request.data:
+        if 'rejectRequest' in request.data and request.data['rejectRequest'] == True:
             friend = Friends.objects.get(whom=user.id, who=data['id'])
             friend.pending = False
             friend.save()
