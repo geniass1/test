@@ -15,7 +15,7 @@ class UserPostGet(APIView):
         all_posts = UserPosts.objects.all().filter(user=username.id)
         all_posts = [UserPostSerializer(instance=post).data for post in all_posts]
         for post in all_posts:
-            if post['image'] != None:
+            if post['image'] is not None:
                 post['image'] = request.build_absolute_uri(post['image'])
                 post['comments'] = Comments.objects.get(post=post['id'])
         return Response({'all_posts': all_posts}, status=status.HTTP_200_OK)
@@ -83,7 +83,7 @@ class UserProfilePost(APIView):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
-        if 'image' in request.data and 'image' != None:
+        if 'image' in request.data and 'image' is not None:
             serializer = UserPostSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -115,15 +115,7 @@ class UserProfileGet(APIView):
         data['friends'] = friends.get(request).data['friends']
         data['subscriptions'] = subscriptions.get(request).data['subscriptions']
         # data['posts'] = posts.get(request, id).data
-        if 'image' in data and data['image'] != None:
+        if 'image' in data and data['image'] is not None:
             data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username
         return Response({'user': data}, status=status.HTTP_200_OK)
-
-
-
-
-
-
-
-

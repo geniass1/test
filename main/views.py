@@ -36,28 +36,28 @@ class Reaction(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, id):
+    def delete(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
-        friend = get_object_or_404(Friends, who=user.id, whom=id)
+        friend = get_object_or_404(Friends, who=user.id, whom=request.data['id'])
         friend.delete()
         return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
 
 class Message(APIView):
-    def get(self, request, id):
+    def get(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
         all_messages = Messages.objects.all().filter(
-            Q(who=user, whom__id=id) | Q(who__id=id, whom=user))
+            Q(who=user, whom__id=request.GET['id']) | Q(who__id=request.GET['id'], whom=user))
         all_messages = [MessageSerializer(instance=message).data for message in all_messages]
         return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
 
-    def post(self, request, id):
+    def post(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         data = dict(request.data.items())
         data['who'] = NewUser.objects.get(username=username['username']).id
-        data['whom'] = id
+        data['whom'] = request.data['id']
         serializer = MessageSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -87,7 +87,7 @@ class CurrentFriends(APIView):
             if "Authorization" in request.headers:
                 username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
                 id = NewUser.objects.get(username=username['username']).id
-                if Friends.objects.filter(who=id, whom=friend['id']).count()>0:
+                if Friends.objects.filter(who=id, whom=friend['id']).count() > 0:
                     friend['isFriend'] = True
                 else:
                     friend['isFriend'] = False
