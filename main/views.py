@@ -21,7 +21,7 @@ class Reaction(APIView):
         data = dict(request.data.items())
         data['who'] = user.id
         data['whom'] = data['id']
-        if 'rejectRequest' in request.data and request.data['rejectRequest'] == True:
+        if 'rejectRequest' in request.data and request.data['rejectRequest'] is True:
             friend = Friends.objects.get(whom=user.id, who=data['id'])
             friend.pending = False
             friend.save()
@@ -139,7 +139,7 @@ class Subscriptions(APIView):
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
 
-        serializers = CurrentFriendsSerializer(qs, many=True)
+        serializers = CurrentFriendsSerializer(qs,context={'request': request}, many=True)
         return Response({'subscriptions': serializers.data}, status=status.HTTP_200_OK)
 
 
