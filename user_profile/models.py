@@ -10,7 +10,7 @@ class UserPosts(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.ForeignKey(NewUser, on_delete=models.CASCADE, related_name='user_profile')
+    user = models.OneToOneField(NewUser, on_delete=models.CASCADE, related_name='user_profile')
     image = models.ForeignKey(UserPosts, on_delete=models.CASCADE,
                                related_name='user_avatar', null=True)
     status = models.TextField(null=True, blank=True)

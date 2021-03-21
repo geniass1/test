@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from user_profile.serializers import UserPostSerializer, UserProfileSerializer
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from user_profile.services import friend_request_status
 
 
 class UserPostGet(APIView):
@@ -115,6 +116,7 @@ class UserProfileGet(APIView):
         data['friends'] = friends.get(request).data['friends']
         data['subscriptions'] = subscriptions.get(request).data['subscriptions']
         # data['posts'] = posts.get(request, id).data
+        # data['']
         if 'image' in data and data['image'] is not None:
             data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username

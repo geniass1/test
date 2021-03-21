@@ -1,3 +1,5 @@
+from sqlalchemy import union
+
 from user.models import NewUser
 from main.models import Friends, Messages
 from user_profile.models import UserProfile
@@ -48,10 +50,53 @@ class Message(APIView):
     def get(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
-        all_messages = Messages.objects.all().filter(
-            Q(who=user, whom__id=request.GET['id']) | Q(who__id=request.GET['id'], whom=user))
-        all_messages = [MessageSerializer(instance=message).data for message in all_messages]
-        return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
+        if 'id' in request.GET:
+            all_messages = Messages.objects.all().filter(
+                Q(who=user, whom__id=request.GET['id']) | Q(who__id=request.GET['id'], whom=user))
+            # breakpoint()
+            all_messages = [MessageSerializer(instance=message).data for message in all_messages]
+            return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
+        else:
+            messages = Messages.objects.raw(
+                '''
+                SELECT *
+                FROM main_messages AS main
+                WHERE 
+                    (
+                        main.id = (
+                            SELECT max(id) 
+                            FROM (
+                                SELECT id 
+                                FROM main_messages
+                                WHERE
+                                    (who_id = :user_id) and
+                                    ((whom_id = main.whom_id) or (whom_id = main.who_id)) and 
+                                    (whom_id != :user_id)
+                                UNION ALL 
+                                SELECT id 
+                                FROM main_messages
+                                WHERE 
+                                    (whom_id = :user_id) and
+                                    ((who_id = main.whom_id) or (who_id = main.who_id)) and
+                                    (who_id != :user_id)
+                        )
+                    ) OR (
+                        main.id = (
+                            SELECT max(id)
+                            FROM main_messages
+                            WHERE 
+                                (whom_id = :user_id) and
+                                (who_id = :user_id)
+                        )
+                    ) 
+                )
+                ORDER BY id DESC                   
+                ''',
+                {"user_id": user.id}
+            )
+            print(messages)
+            all_messages = [MessageSerializer(instance=message).data for message in messages]
+            return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
 
     def post(self, request):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
@@ -77,20 +122,7 @@ class CurrentFriends(APIView):
             Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
-        serializer = [CurrentFriendsSerializer(instance=post).data for post in friends]
-        for friend in serializer:
-            # breakpoint()
-            try:
-                friend['image'] = request.build_absolute_uri((UserProfile.objects.get(id=friend['id'])).image.image.url)
-            except:
-                friend['image'] = None
-            if "Authorization" in request.headers:
-                username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-                id = NewUser.objects.get(username=username['username']).id
-                if Friends.objects.filter(who=id, whom=friend['id']).count() > 0:
-                    friend['isFriend'] = True
-                else:
-                    friend['isFriend'] = False
+        serializer = [CurrentFriendsSerializer(instance=post, context={'request': request}).data for post in friends]
         return Response({'friends': serializer}, status=status.HTTP_200_OK)
 
 
