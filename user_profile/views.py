@@ -99,7 +99,6 @@ class UserProfilePost(APIView):
 
 class UserProfileGet(APIView):
     def get(self, request):
-        # breakpoint()
         if request.GET['id'] == '0':
             username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
             data = dict(request.data.items())
