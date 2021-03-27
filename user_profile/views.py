@@ -1,7 +1,7 @@
 from user.models import NewUser
 from user_profile.models import UserPosts, Likes, UserProfile, Comments
 import jwt
-from main.views import CurrentFriends, Subscriptions
+from main.views import CurrentFriends, Subscriptions, Requested
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_profile.serializers import UserPostSerializer, UserProfileSerializer
@@ -111,12 +111,17 @@ class UserProfileGet(APIView):
         data = dict(user_profile.data.items())
         friends = CurrentFriends()
         subscriptions = Subscriptions()
+        requested = Requested()
         posts = UserPostGet()
         data['friends'] = friends.get(request).data['friends']
         data['subscriptions'] = subscriptions.get(request).data['subscriptions']
+        data['requested'] = requested.get(request).data['requests']
         # data['posts'] = posts.get(request, id).data
-        # data['']
-        if 'image' in data and data['image'] is not None:
-            data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
+        if id != 0 and request.headers['Authorization']:
+            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+            data['RELATIONS'] = friend_request_status(username['username'], data['friends'], data['subscriptions'],
+                                                      data['requested'])
+        # if 'image' in data and data['image'] is not None:
+        #     data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username
         return Response({'user': data}, status=status.HTTP_200_OK)

@@ -21,7 +21,7 @@ class Reaction(APIView):
         data = dict(request.data.items())
         data['who'] = user.id
         data['whom'] = data['id']
-        if 'rejectRequest' in request.data and request.data['rejectRequest'] is True:
+        if 'isRejectRequest' in request.data and request.data['isRejectRequest'] is True:
             friend = Friends.objects.get(whom=user.id, who=data['id'])
             friend.pending = False
             friend.save()
@@ -42,6 +42,7 @@ class Reaction(APIView):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
         friend = get_object_or_404(Friends, who=user.id, whom=request.data['id'])
+        friend.pending = False
         friend.delete()
         return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
@@ -139,7 +140,7 @@ class Subscriptions(APIView):
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
         ).distinct()
 
-        serializers = CurrentFriendsSerializer(qs,context={'request': request}, many=True)
+        serializers = CurrentFriendsSerializer(qs, context={'request': request}, many=True)
         return Response({'subscriptions': serializers.data}, status=status.HTTP_200_OK)
 
 
@@ -152,5 +153,5 @@ class Requested(APIView):
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user, pending=True))
         ).distinct()
 
-        serializers = CurrentFriendsSerializer(requested, many=True)
+        serializers = CurrentFriendsSerializer(requested, context={'request': request}, many=True)
         return Response({'requests': serializers.data}, status=status.HTTP_200_OK)
