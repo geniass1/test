@@ -1,9 +1,9 @@
 def friend_request_status(username, friends, subscriptions, requested):
     # breakpoint()
     if username in list(map(lambda x: x['username'], friends)):
-        return 'FRIEND'
+        return 'friend'
     elif username in list(map(lambda x: x['username'], subscriptions)):
-        return 'SUBSCRIBED'
+        return 'subscribed'
     elif username in list(map(lambda x: x['username'], requested)):
-        return 'REQUEST'
-    return 'NO'
+        return 'request'
+    return 'no'

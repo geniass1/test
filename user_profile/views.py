@@ -117,11 +117,14 @@ class UserProfileGet(APIView):
         data['subscriptions'] = subscriptions.get(request).data['subscriptions']
         data['requested'] = requested.get(request).data['requests']
         # data['posts'] = posts.get(request, id).data
-        if id != 0 and request.headers['Authorization']:
-            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-            data['RELATIONS'] = friend_request_status(username['username'], data['friends'], data['subscriptions'],
-                                                      data['requested'])
-        # if 'image' in data and data['image'] is not None:
-        #     data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
+        if id != 0:
+            try:
+                username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+                data['relations'] = friend_request_status(username['username'], data['friends'], data['subscriptions'],
+                                                          data['requested'])
+            except:
+                pass
+        if 'image' in data and data['image'] is not None:
+            data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
         data['username'] = NewUser.objects.get(id=id).username
         return Response({'user': data}, status=status.HTTP_200_OK)

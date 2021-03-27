@@ -1,5 +1,3 @@
-from sqlalchemy import union
-
 from user.models import NewUser
 from main.models import Friends, Messages
 from user_profile.models import UserProfile
@@ -22,16 +20,16 @@ class Reaction(APIView):
         data['who'] = user.id
         data['whom'] = data['id']
         if 'isRejectRequest' in request.data and request.data['isRejectRequest'] is True:
-            friend = Friends.objects.get(whom=user.id, who=data['id'])
+            friend = Friends.objects.get(who=user.id, whom=data['id'])
             friend.pending = False
             friend.save()
             return Response({'status': 'success'}, status=status.HTTP_200_OK)
-        try:
-            friend = Friends.obejects.get(whom=user.id, who=data['id'])
-            friend.pending = False
-            friend.save()
-        except:
-            pass
+        # try:
+        #     friend = Friends.obejects.get(whom=user.id, who=data['id'])
+        #     friend.pending = False
+        #     friend.save()
+        # except:
+        #     pass
         serializer = ReactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -42,8 +40,10 @@ class Reaction(APIView):
         username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         user = NewUser.objects.get(username=username['username'])
         friend = get_object_or_404(Friends, who=user.id, whom=request.data['id'])
-        friend.pending = False
+        reversed_friend = get_object_or_404(Friends, whom=user.id, who=request.data['id'])
+        reversed_friend.pending = False
         friend.delete()
+        reversed_friend.save()
         return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
 
@@ -137,7 +137,7 @@ class Subscriptions(APIView):
         user = NewUser.objects.get(id=id)
         qs = NewUser.objects.filter(
             ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
-            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
+            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user, pending=False))
         ).distinct()
 
         serializers = CurrentFriendsSerializer(qs, context={'request': request}, many=True)
@@ -146,8 +146,12 @@ class Subscriptions(APIView):
 
 class Requested(APIView):
     def get(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username']).id
+        if request.GET['id'] == '0':
+            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+            id = NewUser.objects.get(username=username['username']).id
+        else:
+            id = request.GET['id']
+        user = NewUser.objects.get(id=id)
         requested = NewUser.objects.filter(
             ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
             Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user, pending=True))

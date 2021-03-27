@@ -25,9 +25,10 @@ class CurrentFriendsSerializer(serializers.ModelSerializer):
         request = self.context['request']
         if "Authorization" in request.headers:
             username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        id = NewUser.objects.get(username=username['username']).id
-        if Friends.objects.filter(who=id, whom=user.id).count() > 0:
-            return True
+            id = NewUser.objects.get(username=username['username']).id
+            if Friends.objects.filter(who=id, whom=user.id).count() > 0:
+                return True
+            return False
         return False
 
 
@@ -57,6 +58,9 @@ class ReactionSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        likes = Friends(who=validated_data['who'], whom=validated_data['whom'], pending=True)
-        likes.save()
-        return likes
+        if Friends.objects.filter(who=validated_data['who'], whom=validated_data['whom']).count() > 0:
+            return None
+        else:
+            likes = Friends(who=validated_data['who'], whom=validated_data['whom'], pending=True)
+            likes.save()
+            return likes
