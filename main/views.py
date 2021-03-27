@@ -30,6 +30,8 @@ class Reaction(APIView):
         #     friend.save()
         # except:
         #     pass
+        if Friends.objects.filter(who=data['who'], whom=data['whom']).count() > 0:
+            return Response('Relation already exists', status=status.HTTP_409_CONFLICT)
         serializer = ReactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

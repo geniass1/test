@@ -58,9 +58,6 @@ class ReactionSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        if Friends.objects.filter(who=validated_data['who'], whom=validated_data['whom']).count() > 0:
-            return None
-        else:
-            likes = Friends(who=validated_data['who'], whom=validated_data['whom'], pending=True)
-            likes.save()
-            return likes
+        likes = Friends(who=validated_data['who'], whom=validated_data['whom'], pending=True)
+        likes.save()
+        return likes
