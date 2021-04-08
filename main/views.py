@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from main.serializers import CurrentFriendsSerializer, MessageSerializer, ReactionSerializer
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from user_profile.services import get_friends, get_requested, get_subscriptions
 
 
 class Reaction(APIView):
@@ -121,10 +122,7 @@ class CurrentFriends(APIView):
         else:
             id = request.GET['id']
         user = NewUser.objects.get(id=id)
-        friends = NewUser.objects.filter(
-            Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
-            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user))
-        ).distinct()
+        friends = get_friends(user)
         serializer = [CurrentFriendsSerializer(instance=post, context={'request': request}).data for post in friends]
         return Response({'friends': serializer}, status=status.HTTP_200_OK)
 
@@ -137,12 +135,8 @@ class Subscriptions(APIView):
         else:
             id = request.GET['id']
         user = NewUser.objects.get(id=id)
-        qs = NewUser.objects.filter(
-            ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
-            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user, pending=False))
-        ).distinct()
-
-        serializers = CurrentFriendsSerializer(qs, context={'request': request}, many=True)
+        subscriptions = get_subscriptions(user)
+        serializers = CurrentFriendsSerializer(subscriptions, context={'request': request}, many=True)
         return Response({'subscriptions': serializers.data}, status=status.HTTP_200_OK)
 
 
@@ -154,10 +148,6 @@ class Requested(APIView):
         else:
             id = request.GET['id']
         user = NewUser.objects.get(id=id)
-        requested = NewUser.objects.filter(
-            ~Exists(Friends.objects.filter(who=user, whom__id=OuterRef('pk')))).filter(
-            Exists(Friends.objects.filter(who__id=OuterRef('pk'), whom=user, pending=True))
-        ).distinct()
-
+        requested = get_requested(user)
         serializers = CurrentFriendsSerializer(requested, context={'request': request}, many=True)
         return Response({'requests': serializers.data}, status=status.HTTP_200_OK)

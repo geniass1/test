@@ -6,12 +6,11 @@ from main.models import Messages, Friends
 
 class CurrentFriendsSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField(read_only=True)
-    isFriend = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = NewUser
         fields = (
-            'id', 'username', 'image', 'isFriend'
+            'id', 'username', 'image'
         )
 
     def get_image(self, user):
@@ -20,16 +19,6 @@ class CurrentFriendsSerializer(serializers.ModelSerializer):
         if image is None:
             return None
         return request.build_absolute_uri(image.image.url)
-
-    def get_isFriend(self, user):
-        request = self.context['request']
-        if "Authorization" in request.headers:
-            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-            id = NewUser.objects.get(username=username['username']).id
-            if Friends.objects.filter(who=id, whom=user.id).count() > 0:
-                return True
-            return False
-        return False
 
 
 class MessageSerializer(serializers.ModelSerializer):

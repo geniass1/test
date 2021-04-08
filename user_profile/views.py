@@ -1,13 +1,17 @@
+from rest_framework.decorators import action
+from rest_framework.viewsets import ViewSet
+
 from user.models import NewUser
 from user_profile.models import UserPosts, Likes, UserProfile, Comments
 import jwt
 from main.views import CurrentFriends, Subscriptions, Requested
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from user_profile.serializers import UserPostSerializer, UserProfileSerializer
+from user_profile.serializers import UserPostSerializer, UserProfileSerializer, UserProfileMySerializer, \
+    UserProfileReadSerializer
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from user_profile.services import friend_request_status
+from user_profile.services import friend_request_status, get_friends, get_subscriptions, get_requested
 
 
 class UserPostGet(APIView):
@@ -97,34 +101,34 @@ class UserProfilePost(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserProfileGet(APIView):
+class UserProfileMyGet(APIView):
     def get(self, request):
-        if request.GET['id'] == '0':
-            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-            data = dict(request.data.items())
-            data['user'] = NewUser.objects.get(username=username['username']).id
-            id = data['user']
-        else:
-            id = request.GET['id']
-        user_profile = get_object_or_404(UserProfile, user=id)
-        user_profile = UserProfileSerializer(user_profile)
-        data = dict(user_profile.data.items())
-        friends = CurrentFriends()
-        subscriptions = Subscriptions()
-        requested = Requested()
-        posts = UserPostGet()
-        data['friends'] = friends.get(request).data['friends']
-        data['subscriptions'] = subscriptions.get(request).data['subscriptions']
-        data['requested'] = requested.get(request).data['requests']
-        # data['posts'] = posts.get(request, id).data
-        if id != 0:
-            try:
-                username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-                data['relations'] = friend_request_status(username['username'], data['friends'], data['subscriptions'],
-                                                          data['requested'])
-            except:
-                pass
-        if 'image' in data and data['image'] is not None:
-            data['image'] = request.build_absolute_uri(UserPosts.objects.get(id=data['image']).image.url)
-        data['username'] = NewUser.objects.get(id=id).username
-        return Response({'user': data}, status=status.HTTP_200_OK)
+        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        user = NewUser.objects.get(username=username['username'])
+        user.profile = get_object_or_404(UserProfile, user=user)
+        friends = get_friends(user)
+        user.friends = friends[:5]
+        user.friends_count = friends.count()
+        user.subscriptions = get_subscriptions(user)
+        user.requested = get_requested(user)
+        return Response(
+            UserProfileMySerializer(instance=user, context={'request': request}).data, status=status.HTTP_200_OK
+        )
+
+
+class UserProfileGet(APIView):
+    def get(self, request, id):
+        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        main_user = NewUser.objects.get(username=username['username'])
+        user = NewUser.objects.get(id=id)
+        user.profile = get_object_or_404(UserProfile, user=user)
+        friends = get_friends(user)
+        user.friends = friends[:5]
+        user.friends_count = friends.count()
+        user.subscriptions = get_subscriptions(user)
+        user.requested = get_requested(user)
+
+        return Response(
+            UserProfileReadSerializer(instance=user, context={'request': request, 'main_user': main_user}).data,
+            status=status.HTTP_200_OK
+        )
