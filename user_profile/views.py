@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_profile.serializers import UserPostSerializer, UserProfileSerializer, UserProfileMySerializer, \
     UserProfileReadSerializer
-from rest_framework import status
+from rest_framework import status, permissions
 from django.shortcuts import get_object_or_404
 from user_profile.services import friend_request_status, get_friends, get_subscriptions, get_requested
 
@@ -45,7 +45,7 @@ class UserPost(APIView):
         if serializer.is_valid():
             serializer.save()
             data = dict(serializer.data.items())
-            if 'image' in data and data['image'] != None:
+            if 'image' in data and data['image'] is not None:
                 data['image'] = request.build_absolute_uri(data['image'])
             return Response(data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -103,8 +103,8 @@ class UserProfilePost(APIView):
 
 class UserProfileMyGet(APIView):
     def get(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
+        permission_classes = (permissions.IsAuthenticated,)
+        user = request.user
         user.profile = get_object_or_404(UserProfile, user=user)
         friends = get_friends(user)
         user.friends = friends[:5]
@@ -118,8 +118,10 @@ class UserProfileMyGet(APIView):
 
 class UserProfileGet(APIView):
     def get(self, request, id):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        main_user = NewUser.objects.get(username=username['username'])
+        if 'Authorization' in request.headers:
+            main_user = request.user
+        else:
+            main_user = ' '
         user = NewUser.objects.get(id=id)
         user.profile = get_object_or_404(UserProfile, user=user)
         friends = get_friends(user)

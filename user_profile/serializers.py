@@ -72,16 +72,17 @@ class FriendOfFriendSerializer(CurrentFriendsSerializer):
 
     def get_status(self, instance):
         main_user = self.context['main_user']
-        friends = get_friends(main_user)
-        subscriptions = get_subscriptions(main_user)
-        requested = get_requested(main_user)
-        if instance in friends:
-            return "friend"
-        elif instance in subscriptions:
-            return "subscription"
-        elif instance in requested:
-            return "requested"
-        return None
+        if main_user != " ":
+            friends = get_friends(main_user)
+            subscriptions = get_subscriptions(main_user)
+            requested = get_requested(main_user)
+            if instance in friends:
+                return "friend"
+            elif instance in subscriptions:
+                return "subscription"
+            elif instance in requested:
+                return "requested"
+            return None
 
 
 class UserProfileReadSerializer(UserProfileMySerializer):

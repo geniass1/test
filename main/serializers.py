@@ -1,4 +1,3 @@
-import jwt
 from rest_framework import serializers
 from user.models import NewUser
 from main.models import Messages, Friends
@@ -29,11 +28,6 @@ class MessageSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        cr_message = Messages(
-            who=validated_data['who'],
-            whom=validated_data['whom'],
-            message=validated_data['message']
-        )
         new_message = Messages.objects.create(who=validated_data['who'], whom=validated_data['whom'],
                                               message=validated_data['message'])
         return new_message
