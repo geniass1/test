@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AnonymousUser
-from rest_framework import serializers
 from rest_framework.fields import IntegerField, SerializerMethodField
 
 from main.serializers import CurrentFriendsSerializer

@@ -1,6 +1,5 @@
 from user.models import NewUser
 from user_profile.models import UserPosts, Likes, UserProfile, Comments
-import jwt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_profile.serializers import UserPostSerializer, UserProfileSerializer, UserProfileMySerializer, \
@@ -10,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from user_profile.services import get_friends, get_subscriptions, get_requested
 
 
-class UserPostGet(APIView):
+class UserPost(APIView):
     def get(self, request, id):
         username = get_object_or_404(NewUser, id=id)
         all_posts = UserPosts.objects.all().filter(user=username.id)
@@ -21,22 +20,18 @@ class UserPostGet(APIView):
                 post['comments'] = Comments.objects.get(post=post['id'])
         return Response({'all_posts': all_posts}, status=status.HTTP_200_OK)
 
-
-class UserPostDelete(APIView):
     def delete(self, request, id):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        if UserPosts.objects.get(id=id).user.id == NewUser.objects.get(username=username['username']).id:
+        permission_classes = (permissions.IsAuthenticated,)
+        if UserPosts.objects.get(id=id).user.id == request.user.id:
             post = UserPosts.objects.get(id=id)
             post.delete()
             return Response({'status': 'success'}, status=status.HTTP_200_OK)
         return Response({'status': 'error'}, status=status.HTTP_404_NOT_FOUND)
 
-
-class UserPost(APIView):
     def post(self, request):
-        username = request.user.username
+        permission_classes = (permissions.IsAuthenticated,)
         data = dict(request.data.items())
-        data['user'] = NewUser.objects.get(username=username['username']).id
+        data['user'] = request.user.id
         serializer = UserPostSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -48,12 +43,11 @@ class UserPost(APIView):
 
 
 class UserPostLikes(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
     def post(self, request, id):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1],
-                              'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
         post = get_object_or_404(UserPosts, id=id)
-        like, _ = Likes.objects.get_or_create(user_id=user.id, post_id=post.id)
+        like, _ = Likes.objects.get_or_create(user_id=request.user.id, post_id=post.id)
         if like.is_liked:
             like.is_liked = False
             post.likes -= 1
@@ -65,25 +59,22 @@ class UserPostLikes(APIView):
             post.likes += 1
             like.save()
             post.save()
-            return Response({'status': 'like was added'}, status=status.HTTP_200_OK)
+            return Response({'status': 'like was created'}, status=status.HTTP_200_OK)
 
 
 class UserPostComments(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
     def post(self, request, id):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1],
-                              'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
         post = get_object_or_404(UserPosts, id=id)
-        # breakpoint()
-        comment = Comments.objects.create(user=user, post=post, comment=request.data['comment'])
+        comment = Comments.objects.create(user=request.user, post=post, comment=request.data['comment'])
         return Response({'status': 'success'}, status=status.HTTP_200_OK)
 
 
 class UserProfilePost(APIView):
     def post(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
         data = dict(request.data.items())
-        data['user'] = NewUser.objects.get(username=username['username']).id
+        data['user'] = request.user.id
         if 'image' in request.data and 'image' is not None:
             serializer = UserPostSerializer(data=data)
             if serializer.is_valid():

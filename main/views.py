@@ -1,9 +1,6 @@
 from user.models import NewUser
 from main.models import Friends, Messages
-from user_profile.models import UserProfile
 from django.db.models import Q
-from django.db.models import Exists, OuterRef
-import jwt
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,33 +12,22 @@ from user_profile.services import get_friends, get_requested, get_subscriptions
 
 class Reaction(APIView):
     def post(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
-        data = dict(request.data.items())
-        data['who'] = user.id
-        data['whom'] = data['id']
+        user = request.user
         if 'isRejectRequest' in request.data and request.data['isRejectRequest'] is True:
-            friend = Friends.objects.get(who=user.id, whom=data['id'])
+            friend = Friends.objects.get(who=user.id, whom=request.data['id'])
             friend.pending = False
             friend.save()
             return Response({'status': 'success'}, status=status.HTTP_200_OK)
-        # try:
-        #     friend = Friends.obejects.get(whom=user.id, who=data['id'])
-        #     friend.pending = False
-        #     friend.save()
-        # except:
-        #     pass
-        if Friends.objects.filter(who=data['who'], whom=data['whom']).count() > 0:
+        if Friends.objects.filter(who=user.id, whom=request.data['id']).count() > 0:
             return Response('Relation already exists', status=status.HTTP_409_CONFLICT)
-        serializer = ReactionSerializer(data=data)
+        serializer = ReactionSerializer(data={'who': user.id, 'whom': request.data['id']})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
+        user = request.user
         friend = get_object_or_404(Friends, who=user.id, whom=request.data['id'])
         reversed_friend = get_object_or_404(Friends, whom=user.id, who=request.data['id'])
         reversed_friend.pending = False
@@ -52,12 +38,10 @@ class Reaction(APIView):
 
 class Message(APIView):
     def get(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        user = NewUser.objects.get(username=username['username'])
+        user = request.user
         if 'id' in request.GET:
             all_messages = Messages.objects.all().filter(
                 Q(who=user, whom__id=request.GET['id']) | Q(who__id=request.GET['id'], whom=user))
-            # breakpoint()
             all_messages = [MessageSerializer(instance=message).data for message in all_messages]
             return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
         else:
@@ -98,16 +82,12 @@ class Message(APIView):
                 ''',
                 {"user_id": user.id}
             )
-            print(messages)
             all_messages = [MessageSerializer(instance=message).data for message in messages]
             return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-        data = dict(request.data.items())
-        data['who'] = NewUser.objects.get(username=username['username']).id
-        data['whom'] = request.data['id']
-        serializer = MessageSerializer(data=data)
+        serializer = MessageSerializer(
+            data={'who': request.user.id, 'whom': request.data['id'], 'message': request.data['message']})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -116,12 +96,7 @@ class Message(APIView):
 
 class CurrentFriends(APIView):
     def get(self, request):
-        if request.GET['id'] == '0':
-            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-            id = NewUser.objects.get(username=username['username']).id
-        else:
-            id = request.GET['id']
-        user = NewUser.objects.get(id=id)
+        user = NewUser.objects.get(id=request.GET['id'])
         friends = get_friends(user)
         serializer = [CurrentFriendsSerializer(instance=post, context={'request': request}).data for post in friends]
         return Response({'friends': serializer}, status=status.HTTP_200_OK)
@@ -129,12 +104,7 @@ class CurrentFriends(APIView):
 
 class Subscriptions(APIView):
     def get(self, request):
-        if request.GET['id'] == '0':
-            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-            id = NewUser.objects.get(username=username['username']).id
-        else:
-            id = request.GET['id']
-        user = NewUser.objects.get(id=id)
+        user = NewUser.objects.get(id=request.GET['id'])
         subscriptions = get_subscriptions(user)
         serializers = CurrentFriendsSerializer(subscriptions, context={'request': request}, many=True)
         return Response({'subscriptions': serializers.data}, status=status.HTTP_200_OK)
@@ -142,12 +112,7 @@ class Subscriptions(APIView):
 
 class Requested(APIView):
     def get(self, request):
-        if request.GET['id'] == '0':
-            username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
-            id = NewUser.objects.get(username=username['username']).id
-        else:
-            id = request.GET['id']
-        user = NewUser.objects.get(id=id)
+        user = NewUser.objects.get(id=request.GET['id'])
         requested = get_requested(user)
         serializers = CurrentFriendsSerializer(requested, context={'request': request}, many=True)
         return Response({'requests': serializers.data}, status=status.HTTP_200_OK)

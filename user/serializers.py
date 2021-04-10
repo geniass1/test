@@ -34,6 +34,3 @@ class ChangeSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         return {}
-
-
-
