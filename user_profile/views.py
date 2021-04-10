@@ -1,17 +1,13 @@
-from rest_framework.decorators import action
-from rest_framework.viewsets import ViewSet
-
 from user.models import NewUser
 from user_profile.models import UserPosts, Likes, UserProfile, Comments
 import jwt
-from main.views import CurrentFriends, Subscriptions, Requested
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from user_profile.serializers import UserPostSerializer, UserProfileSerializer, UserProfileMySerializer, \
     UserProfileReadSerializer
 from rest_framework import status, permissions
 from django.shortcuts import get_object_or_404
-from user_profile.services import friend_request_status, get_friends, get_subscriptions, get_requested
+from user_profile.services import get_friends, get_subscriptions, get_requested
 
 
 class UserPostGet(APIView):
@@ -38,7 +34,7 @@ class UserPostDelete(APIView):
 
 class UserPost(APIView):
     def post(self, request):
-        username = jwt.decode(request.headers['Authorization'].split(' ')[1], 'secret', algorithms=['HS256'])
+        username = request.user.username
         data = dict(request.data.items())
         data['user'] = NewUser.objects.get(username=username['username']).id
         serializer = UserPostSerializer(data=data)
@@ -102,8 +98,9 @@ class UserProfilePost(APIView):
 
 
 class UserProfileMyGet(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
     def get(self, request):
-        permission_classes = (permissions.IsAuthenticated,)
         user = request.user
         user.profile = get_object_or_404(UserProfile, user=user)
         friends = get_friends(user)
@@ -118,10 +115,6 @@ class UserProfileMyGet(APIView):
 
 class UserProfileGet(APIView):
     def get(self, request, id):
-        if 'Authorization' in request.headers:
-            main_user = request.user
-        else:
-            main_user = ' '
         user = NewUser.objects.get(id=id)
         user.profile = get_object_or_404(UserProfile, user=user)
         friends = get_friends(user)
@@ -131,6 +124,7 @@ class UserProfileGet(APIView):
         user.requested = get_requested(user)
 
         return Response(
-            UserProfileReadSerializer(instance=user, context={'request': request, 'main_user': main_user}).data,
+            UserProfileReadSerializer(instance=user,
+                                      context={'request': request, 'main_user': request.user}).data,
             status=status.HTTP_200_OK
         )

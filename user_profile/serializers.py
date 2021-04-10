@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import serializers
 from rest_framework.fields import IntegerField, SerializerMethodField
 
@@ -72,7 +73,7 @@ class FriendOfFriendSerializer(CurrentFriendsSerializer):
 
     def get_status(self, instance):
         main_user = self.context['main_user']
-        if main_user != " ":
+        if not isinstance(main_user, AnonymousUser):
             friends = get_friends(main_user)
             subscriptions = get_subscriptions(main_user)
             requested = get_requested(main_user)
@@ -82,10 +83,28 @@ class FriendOfFriendSerializer(CurrentFriendsSerializer):
                 return "subscription"
             elif instance in requested:
                 return "requested"
-            return None
+        return None
 
 
 class UserProfileReadSerializer(UserProfileMySerializer):
     friends = FriendOfFriendSerializer(many=True)
     subscriptions = CurrentFriendsSerializer(many=True)
     requested = CurrentFriendsSerializer(many=True)
+    relation = SerializerMethodField()
+
+    class Meta(UserProfileMySerializer.Meta):
+        fields = UserProfileMySerializer.Meta.fields + ('relation',)
+
+    def get_relation(self, instance):
+        main_user = self.context['main_user']
+        if not isinstance(main_user, AnonymousUser):
+            friends = get_friends(main_user)
+            subscriptions = get_subscriptions(main_user)
+            requested = get_requested(main_user)
+            if instance in friends:
+                return "friend"
+            elif instance in subscriptions:
+                return "subscription"
+            elif instance in requested:
+                return "requested"
+        return None
