@@ -6,3 +6,4 @@ Pillow==8.1.0
 django-cors-headers==3.7.0
 django-rest-auth==0.9.5
 drf_extra_fields
+djangorestframework-simplejwt
