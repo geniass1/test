@@ -8,7 +8,7 @@ from drf_extra_fields.fields import Base64ImageField
 
 from rest_framework import serializers
 
-from .services import get_friends, get_subscriptions, get_requested
+from .services import get_friends, get_subscriptions, get_requested, friend_request_status
 
 
 class UserPostSerializer(serializers.ModelSerializer):
@@ -65,30 +65,24 @@ class UserProfileMySerializer(serializers.ModelSerializer):
 
 
 class FriendOfFriendSerializer(CurrentFriendsSerializer):
-    status = SerializerMethodField()
+    relation = SerializerMethodField()
 
     class Meta(CurrentFriendsSerializer.Meta):
-        fields = CurrentFriendsSerializer.Meta.fields + ('status',)
+        fields = CurrentFriendsSerializer.Meta.fields + ('relation',)
 
-    def get_status(self, instance):
+    def get_relation(self, instance):
         main_user = self.context['main_user']
+        # breakpoint()
         if not isinstance(main_user, AnonymousUser):
-            friends = get_friends(main_user)
-            subscriptions = get_subscriptions(main_user)
-            requested = get_requested(main_user)
-            if instance in friends:
-                return "friend"
-            elif instance in subscriptions:
-                return "subscription"
-            elif instance in requested:
-                return "requested"
+            return friend_request_status(main_user, get_friends(instance), get_subscriptions(instance),
+                                         get_requested(instance))
         return None
 
 
 class UserProfileReadSerializer(UserProfileMySerializer):
     friends = FriendOfFriendSerializer(many=True)
-    subscriptions = CurrentFriendsSerializer(many=True)
-    requested = CurrentFriendsSerializer(many=True)
+    subscriptions = FriendOfFriendSerializer(many=True)
+    requested = FriendOfFriendSerializer(many=True)
     relation = SerializerMethodField()
 
     class Meta(UserProfileMySerializer.Meta):
@@ -97,13 +91,6 @@ class UserProfileReadSerializer(UserProfileMySerializer):
     def get_relation(self, instance):
         main_user = self.context['main_user']
         if not isinstance(main_user, AnonymousUser):
-            friends = get_friends(main_user)
-            subscriptions = get_subscriptions(main_user)
-            requested = get_requested(main_user)
-            if instance in friends:
-                return "friend"
-            elif instance in subscriptions:
-                return "subscription"
-            elif instance in requested:
-                return "requested"
+            return friend_request_status(main_user, get_friends(instance), get_subscriptions(instance),
+                                         get_requested(instance))
         return None

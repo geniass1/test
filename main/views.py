@@ -95,24 +95,24 @@ class Message(APIView):
 
 
 class CurrentFriends(APIView):
-    def get(self, request):
-        user = NewUser.objects.get(id=request.GET['id'])
+    def get(self, request, id):
+        user = NewUser.objects.get(id=id)
         friends = get_friends(user)
         serializer = [CurrentFriendsSerializer(instance=post, context={'request': request}).data for post in friends]
         return Response({'friends': serializer}, status=status.HTTP_200_OK)
 
 
 class Subscriptions(APIView):
-    def get(self, request):
-        user = NewUser.objects.get(id=request.GET['id'])
+    def get(self, request, id):
+        user = NewUser.objects.get(id=id)
         subscriptions = get_subscriptions(user)
         serializers = CurrentFriendsSerializer(subscriptions, context={'request': request}, many=True)
         return Response({'subscriptions': serializers.data}, status=status.HTTP_200_OK)
 
 
 class Requested(APIView):
-    def get(self, request):
-        user = NewUser.objects.get(id=request.GET['id'])
+    def get(self, request, id):
+        user = NewUser.objects.get(id=id)
         requested = get_requested(user)
         serializers = CurrentFriendsSerializer(requested, context={'request': request}, many=True)
         return Response({'requests': serializers.data}, status=status.HTTP_200_OK)
