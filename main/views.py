@@ -50,7 +50,8 @@ class Message(APIView):
         if 'id' in request.GET:
             all_messages = Messages.objects.all().filter(
                 Q(who=user, whom__id=request.GET['id']) | Q(who__id=request.GET['id'], whom=user))
-            all_messages = [MessageSerializer(instance=message).data for message in all_messages]
+            all_messages = [MessageSerializer(instance=message, context={'request': request}).data for message in
+                            all_messages]
             return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
         else:
             messages = Messages.objects.raw(
@@ -90,7 +91,8 @@ class Message(APIView):
                 ''',
                 {"user_id": user.id}
             )
-            all_messages = [MessageSerializer(instance=message).data for message in messages]
+            all_messages = [MessageSerializer(instance=message, context={'request': request}).data for message in
+                            messages]
             return Response({'all_messages': all_messages}, status=status.HTTP_200_OK)
 
     def post(self, request):

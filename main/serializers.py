@@ -21,16 +21,29 @@ class CurrentFriendsSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField(read_only=True)
+    username = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Messages
         fields = (
-            'who', 'whom', 'message'
+            'who', 'whom', 'message', 'image', 'username'
         )
 
     def create(self, validated_data):
         new_message = Messages.objects.create(who=validated_data['who'], whom=validated_data['whom'],
                                               message=validated_data['message'])
         return new_message
+
+    def get_image(self, user):
+        request = self.context['request']
+        image = user.whom.user_profile.image
+        if image is None:
+            return None
+        return request.build_absolute_uri(image.image.url)
+
+    def get_username(self, user):
+        return user.whom.username
 
 
 class ReactionSerializer(serializers.ModelSerializer):
