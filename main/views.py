@@ -21,8 +21,8 @@ class ManageSubscriptions(APIView):
 class Reaction(APIView):
     def post(self, request):
         user = request.user
-        if 'isRejectRequest' in request.data and request.data['isRejectRequest'] is True:
-            friend = Friends.objects.get(who=user.id, whom=request.data['id'])
+        if 'isRejectRequest' in request.data:
+            friend = Friends.objects.get(who=request.data['id'], whom=user.id)
             friend.pending = False
             friend.save()
             return Response({'status': 'success'}, status=status.HTTP_200_OK)
