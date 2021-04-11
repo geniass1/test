@@ -28,6 +28,10 @@ class Reaction(APIView):
 
     def delete(self, request):
         user = request.user
+        if 'unsubscribe' in request.data:
+            friend = get_object_or_404(Friends, who=user.id, whom=request.data['id'])
+            friend.delete()
+            return Response({'status': 'success'}, status=status.HTTP_200_OK)
         friend = get_object_or_404(Friends, who=user.id, whom=request.data['id'])
         reversed_friend = get_object_or_404(Friends, whom=user.id, who=request.data['id'])
         reversed_friend.pending = False

@@ -106,7 +106,7 @@ class UserProfileMyGet(APIView):
 
 class UserProfileGet(APIView):
     def get(self, request, id):
-        user = NewUser.objects.get(id=id)
+        user = get_object_or_404(NewUser, id=id)
         user.profile = get_object_or_404(UserProfile, user=user)
         friends = get_friends(user)
         user.friends = friends[:5]
